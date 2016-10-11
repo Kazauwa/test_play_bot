@@ -4,6 +4,8 @@ import os
 import operator
 import ephem
 import json
+import sys
+
 
 bot = telebot.TeleBot(os.environ.get("TELETOKEN"))
 
@@ -89,8 +91,20 @@ def next_newmoon(message):
 def answer(message):
     phrase = re.sub('\W+', '', message.text)
     bot.reply_to(message, ANSWERS.get(phrase.lower()))
+    bot.reply_to(message, message)
 
+
+@bot.message_handler(func=lambda message: 'нового года' in message.text.lower())
+def newyear_countdown(message):
+    pass
+
+
+@bot.message_handler(func=lambda message: True)
+def silence(message):
+    sys.stdout.buffer.write(message.text.encode())
 
 if __name__ == '__main__':
     ANSWERS = init_phrasebook()
     bot.polling()
+    with open('log', 'a') as logger:
+        logger.write(sys.stdout.readline())
