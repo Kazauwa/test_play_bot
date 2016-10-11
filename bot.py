@@ -4,7 +4,7 @@ import os
 import operator
 import ephem
 import json
-import sys
+from datetime import date
 
 
 bot = telebot.TeleBot(os.environ.get("TELETOKEN"))
@@ -81,7 +81,7 @@ def words_calculator(message):
 @bot.message_handler(func=lambda message: 'полнолуние' in message.text.lower())
 def next_newmoon(message):
     date = re.sub('[А-я]+\s+', '', message.text)
-    if not date:
+   if not date:
         bot.reply_to(message, 'Не забудьте написать дату!')
     reply = ephem.next_new_moon(date)
     bot.reply_to(message, reply)
@@ -96,15 +96,12 @@ def answer(message):
 
 @bot.message_handler(func=lambda message: 'нового года' in message.text.lower())
 def newyear_countdown(message):
-    pass
+    today = date.today()
+    newyear = date(today.year + 1, 1, 1)
+    result = newyear - today
+    bot.reply_to(message, "До нового {0} года осталось {1} дней.".format(newyear.year, result.days))
 
-
-@bot.message_handler(func=lambda message: True)
-def silence(message):
-    sys.stdout.buffer.write(message.text.encode())
 
 if __name__ == '__main__':
     ANSWERS = init_phrasebook()
     bot.polling()
-    with open('log', 'a') as logger:
-        logger.write(sys.stdout.readline())
