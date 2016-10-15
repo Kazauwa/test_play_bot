@@ -6,6 +6,7 @@ import ephem
 import json
 import csv
 from datetime import datetime, date
+from collections import Counter
 
 
 bot = telebot.TeleBot(os.environ.get("TELETOKEN"))
@@ -110,13 +111,6 @@ def next_newmoon(message):
     bot.reply_to(message, reply)
 
 
-@bot.message_handler(func=lambda message: re.sub('\W+', '', message.text.lower()) in ANSWERS)
-def answer(message):
-    phrase = re.sub('\W+', '', message.text)
-    bot.reply_to(message, ANSWERS.get(phrase.lower()))
-    bot.reply_to(message, message)
-
-
 @bot.message_handler(func=lambda message: 'нового года' in message.text.lower())
 def newyear_countdown(message):
     today = date.today()
@@ -134,7 +128,7 @@ def newyear_countdown(message):
     bot.reply_to(message, "До нового {0} года осталось {1} {2}.".format(newyear.year, result, days))
 
 
-@bot.message_handler(func=lambda message: 'осталось до')
+@bot.message_handler(func=lambda message: 'осталось до' in message.text.lower())
 def date_countdown(message):
     today = date.today()
     user_date = re.sub('(?!\-)\D+', '', message.text)
@@ -158,11 +152,29 @@ def date_countdown(message):
     bot.reply_to(message, 'До {0} осталось {1} {2}'.format(user_date, result, days))
 
 
-@bot.message_handler(func=lambda message: True)
-def true(message):
-    timestamp = datetime.fromtimestamp(message.date).strftime('%Y-%m-%d %H:%M:%S')
-    msg = bot.send_message(message.chat.id, timestamp)
-    bot.send_message(message.chat.id, msg)
+@bot.message_handler(func=lambda message: re.match('\d+, \d+', message.text))
+def top_names(message):
+    month, year = message.text.split(', ')
+    names = list()
+    with open('girl_names.csv', 'r') as file:
+        reader = csv.reader(file, delimiter=';')
+        for row in reader:
+            if year in row and month in row:
+                names.append(row[-3])
+    result = Counter(names).most_common(5)
+    answer = str()
+    for name in result:
+        answer += name[0] + '\n'
+    if not answer:
+        bot.reply_to(message, 'К сожалению, никаких имён нет')
+        return
+    bot.reply_to(message, answer)
+
+
+@bot.message_handler(func=lambda message: re.sub('\W+', '', message.text.lower()) in ANSWERS)
+def answer(message):
+    phrase = re.sub('\W+', '', message.text)
+    bot.reply_to(message, ANSWERS.get(phrase.lower()))
 
 
 if __name__ == '__main__':
