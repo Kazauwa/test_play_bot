@@ -73,7 +73,7 @@ def count_words(message):
 
 
 @bot.message_handler(func=lambda message: message.text.rstrip()[-1] == '=')
-# TODO: Приоритет знаков
+# FIXME: Приоритет знаков
 def calculate(message):
     expression = message.text.replace(' ', '')
     tokens = {'+': operator.add,
@@ -132,6 +132,30 @@ def newyear_countdown(message):
     if result % 10 in range(2, 5):
         days = 'дня'
     bot.reply_to(message, "До нового {0} года осталось {1} {2}.".format(newyear.year, result, days))
+
+
+@bot.message_handler(func=lambda message: 'осталось до')
+def date_countdown(message):
+    today = date.today()
+    user_date = re.sub('(?!\-)\D+', '', message.text)
+    if not user_date:
+        bot.reply_to(message, 'Пожалуйста, введите дату в формате дд-мм-гггг')
+        return
+    user_date = datetime.strptime(user_date, '%d-%m-%Y').date()
+    result = user_date - today
+    result = result.days
+    if result < 0:
+        bot.reply_to(message, 'Введённая дата уже прошла!')
+        return
+    if result % 100 in range(5, 21) or result % 100 == 0:
+        days = 'дней'
+    if result % 10 in range(5, 9) or result % 10 == 0:
+        days = 'дней'
+    if result % 10 == 1:
+        days = 'день'
+    if result % 10 in range(2, 5):
+        days = 'дня'
+    bot.reply_to(message, 'До {0} осталось {1} {2}'.format(user_date, result, days))
 
 
 @bot.message_handler(func=lambda message: True)
